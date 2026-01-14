@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Score Predictor - Linear Regression</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            border: none;
+        }
+
+        .value-display {
+            min-width: 80px;
+            text-align: right;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result-container {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .prediction-score {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 25px;
+        }
+
+        .prediction-score h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .score-value {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .coefficients {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .coefficients h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .coef-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .coef-item:last-child {
+            border-bottom: none;
+        }
+
+        .coef-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .coef-value {
+            color: #667eea;
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .chart-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: 300px;
+        }
+
+        .explanation {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .explanation h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .explanation p {
+            color: #856404;
+            line-height: 1.6;
+        }
+
+        .formula {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #333;
+            border: 2px solid #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .score-value {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Powered Student Score Predictor</h1>
+            <p>Predict exam scores using Linear Regression & Linear Algebra</p>
+        </div>
+
+        <div class="card">
+            <h2>Enter Student Information</h2>
+            <form id="predictorForm">
+                <div class="input-group">
+                    <label for="studyHours">Study Hours per Week</label>
+                    <div class="slider-container">
+                        <input type="range" id="studyHours" min="0" max="12" step="0.5" value="5">
+                        <span class="value-display" id="studyHoursValue">5 hrs</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="attendance">Attendance Rate</label>
+                    <div class="slider-container">
+                        <input type="range" id="attendance" min="0" max="100" step="1" value="75">
+                        <span class="value-display" id="attendanceValue">75%</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="practiceScore">Practice Test Score</label>
+                    <div class="slider-container">
+                        <input type="range" id="practiceScore" min="0" max="100" step="1" value="70">
+                        <span class="value-display" id="practiceScoreValue">70</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="sleepHours">Average Sleep Hours per Night</label>
+                    <div class="slider-container">
+                        <input type="range" id="sleepHours" min="3" max="12" step="0.5" value="7">
+                        <span class="value-display" id="sleepHoursValue">7 hrs</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Predict Score</button>
+            </form>
+        </div>
+
+        <div class="card result-container" id="resultContainer">
+            <h2>Prediction Results</h2>
+            <div class="prediction-score">
+                <h3>Predicted Exam Score</h3>
+                <div class="score-value" id="predictedScore">--</div>
+                <span class="grade-badge" id="gradeBadge">--</span>
+            </div>
+
+            <div class="coefficients">
+                <h4>Model Coefficients (β)</h4>
+                <div class="coef-item">
+                    <span class="coef-label">Intercept (β₀)</span>
+                    <span class="coef-value" id="beta0">--</span>
+                </div>
+                <div class="coef-item">
+                    <span class="coef-label">Study Hours (β₁)</span>
+                    <span class="coef-value" id="beta1">--</span>
+                </div>
+                <div class="coef-item">
+                    <span class="coef-label">Attendance (β₂)</span>
+                    <span class="coef-value" id="beta2">--</span>
+                </div>
+                <div class="coef-item">
+                    <span class="coef-label">Practice Score (β₃)</span>
+                    <span class="coef-value" id="beta3">--</span>
+                </div>
+                <div class="coef-item">
+                    <span class="coef-label">Sleep Hours (β₄)</span>
+                    <span class="coef-value" id="beta4">--</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>How It Works</h2>
+            <div class="explanation">
+                <h4>Linear Regression Model</h4>
+                <p>This predictor uses multiple linear regression to estimate exam scores based on study habits. The model is trained on historical student data and uses the Normal Equation from linear algebra.</p>
+                <div class="formula">
+                    β = (XᵀX)⁻¹Xᵀy
+                </div>
+                <p><strong>Where:</strong></p>
+                <p>• β = coefficient vector (weights for each feature)</p>
+                <p>• X = feature matrix (study hours, attendance, etc.)</p>
+                <p>• y = target vector (actual exam scores)</p>
+                <p>• Xᵀ = transpose of X</p>
+                <p>• (XᵀX)⁻¹ = inverse of XᵀX</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Training data - [studyHours, attendance%, practiceScore, sleepHours, actualScore]
+        const trainingData = [
+            [2, 60, 55, 5, 45],
+            [4, 75, 65, 6, 62],
+            [6, 85, 75, 7, 78],
+            [8, 90, 85, 7, 88],
+            [10, 95, 90, 8, 95],
+            [3, 70, 60, 6, 58],
+            [5, 80, 70, 7, 72],
+            [7, 88, 80, 7.5, 82],
+            [9, 92, 88, 8, 91],
+            [1, 50, 45, 5, 38],
+            [11, 98, 95, 8, 97],
+            [4.5, 78, 68, 6.5, 68],
+            [6.5, 82, 78, 7, 80],
+            [8.5, 94, 86, 7.5, 90],
+            [2.5, 65, 58, 5.5, 52]
+        ];
+
+        // Linear Algebra Functions
+        class Matrix {
+            static transpose(matrix) {
+                const rows = matrix.length;
+                const cols = matrix[0].length;
+                const result = [];
+                for (let j = 0; j < cols; j++) {
+                    result[j] = [];
+                    for (let i = 0; i < rows; i++) {
+                        result[j][i] = matrix[i][j];
+                    }
+                }
+                return result;
+            }
+
+            static multiply(a, b) {
+                const aRows = a.length;
+                const aCols = a[0].length;
+                const bCols = b[0].length;
+                const result = [];
+
+                for (let i = 0; i < aRows; i++) {
+                    result[i] = [];
+                    for (let j = 0; j < bCols; j++) {
+                        let sum = 0;
+                        for (let k = 0; k < aCols; k++) {
+                            sum += a[i][k] * b[k][j];
+                        }
+                        result[i][j] = sum;
+                    }
+                }
+                return result;
+            }
+
+            static inverse(matrix) {
+                const n = matrix.length;
+                const augmented = matrix.map((row, i) => {
+                    const identity = Array(n).fill(0);
+                    identity[i] = 1;
+                    return [...row, ...identity];
+                });
+
+                // Gauss-Jordan elimination
+                for (let i = 0; i < n; i++) {
+                    let maxRow = i;
+                    for (let k = i + 1; k < n; k++) {
+                        if (Math.abs(augmented[k][i]) > Math.abs(augmented[maxRow][i])) {
+                            maxRow = k;
+                        }
+                    }
+                    [augmented[i], augmented[maxRow]] = [augmented[maxRow], augmented[i]];
+
+                    const pivot = augmented[i][i];
+                    if (Math.abs(pivot) < 1e-10) continue;
+
+                    for (let j = 0; j < 2 * n; j++) {
+                        augmented[i][j] /= pivot;
+                    }
+
+                    for (let k = 0; k < n; k++) {
+                        if (k !== i) {
+                            const factor = augmented[k][i];
+                            for (let j = 0; j < 2 * n; j++) {
+                                augmented[k][j] -= factor * augmented[i][j];
+                            }
+                        }
+                    }
+                }
+
+                return augmented.map(row => row.slice(n));
+            }
+        }
+
+        // Linear Regression using Normal Equation
+        function trainLinearRegression(data) {
+            const X = data.map(row => [1, ...row.slice(0, 4)]); // Add bias term
+            const y = data.map(row => [row[4]]);
+
+            const Xt = Matrix.transpose(X);
+            const XtX = Matrix.multiply(Xt, X);
+            const XtX_inv = Matrix.inverse(XtX);
+            const Xty = Matrix.multiply(Xt, y);
+            const beta = Matrix.multiply(XtX_inv, Xty);
+
+            return beta.map(row => row[0]);
+        }
+
+        // Predict score
+        function predict(coefficients, features) {
+            const x = [1, ...features]; // Add bias term
+            let score = 0;
+            for (let i = 0; i < x.length; i++) {
+                score += coefficients[i] * x[i];
+            }
+            return Math.max(0, Math.min(100, score)); // Clamp between 0-100
+        }
+
+        // Get letter grade
+        function getLetterGrade(score) {
+            if (score >= 90) return 'A';
+            if (score >= 80) return 'B';
+            if (score >= 70) return 'C';
+            if (score >= 60) return 'D';
+            return 'F';
+        }
+
+        // Train the model
+        const coefficients = trainLinearRegression(trainingData);
+
+        // Update slider values
+        const sliders = ['studyHours', 'attendance', 'practiceScore', 'sleepHours'];
+        sliders.forEach(id => {
+            const slider = document.getElementById(id);
+            const display = document.getElementById(id + 'Value');
+            slider.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (id === 'attendance') {
+                    display.textContent = value + '%';
+                } else if (id === 'practiceScore') {
+                    display.textContent = value;
+                } else {
+                    display.textContent = value + ' hrs';
+                }
+            });
+        });
+
+        // Form submission
+        document.getElementById('predictorForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const studyHours = parseFloat(document.getElementById('studyHours').value);
+            const attendance = parseFloat(document.getElementById('attendance').value);
+            const practiceScore = parseFloat(document.getElementById('practiceScore').value);
+            const sleepHours = parseFloat(document.getElementById('sleepHours').value);
+
+            const features = [studyHours, attendance, practiceScore, sleepHours];
+            const predictedScore = predict(coefficients, features);
+            const grade = getLetterGrade(predictedScore);
+
+            // Display results
+            document.getElementById('predictedScore').textContent = predictedScore.toFixed(1);
+            document.getElementById('gradeBadge').textContent = 'Grade: ' + grade;
+            
+            // Display coefficients
+            document.getElementById('beta0').textContent = coefficients[0].toFixed(4);
+            document.getElementById('beta1').textContent = coefficients[1].toFixed(4);
+            document.getElementById('beta2').textContent = coefficients[2].toFixed(4);
+            document.getElementById('beta3').textContent = coefficients[3].toFixed(4);
+            document.getElementById('beta4').textContent = coefficients[4].toFixed(4);
+
+            // Show results
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.classList.add('show');
+            resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    </script>
+</body>
+</html>
